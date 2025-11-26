@@ -1,45 +1,47 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// =====================
-// GET PROJECT BY ID
-// =====================
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const projectId = Number(id);
+    const userId = Number(id);
 
-    if (isNaN(projectId)) {
+    if (isNaN(userId)) {
       return NextResponse.json(
         { success: false, message: "ID tidak valid" },
         { status: 400 }
       );
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: { user: true },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        skills: true,
+        projects: true,
+        experiences: true,
+        education: true,
+      },
     });
 
-    if (!project) {
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: "Project tidak ditemukan" },
+        { success: false, message: "User tidak ditemukan" },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { success: true, message: "Project ditemukan", data: project },
+      { success: true, message: "User ditemukan", data: user },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengambil project",
+        message: "Gagal mengambil user",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -47,18 +49,16 @@ export async function GET(
   }
 }
 
-// =====================
-// PUT UPDATE PROJECT
-// =====================
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const projectId = Number(id);
+    const userId = Number(id);
 
-    if (isNaN(projectId)) {
+    if (isNaN(userId)) {
       return NextResponse.json(
         { success: false, message: "ID tidak valid" },
         { status: 400 }
@@ -67,32 +67,38 @@ export async function PUT(
 
     const data = await request.json();
 
-    const check = await prisma.project.findUnique({ where: { id: projectId } });
-    if (!check) {
+    const emailUsed = await prisma.user.findFirst({
+      where: {
+        email: data.email,
+        NOT: { id: userId },
+      },
+    });
+
+    if (emailUsed) {
       return NextResponse.json(
-        { success: false, message: "Project tidak ditemukan" },
-        { status: 404 }
+        { success: false, message: "Email sudah digunakan user lain" },
+        { status: 409 }
       );
     }
 
-    const updatedProject = await prisma.project.update({
-      where: { id: projectId },
+    const updated = await prisma.user.update({
+      where: { id: userId },
       data: {
-        title: data.title,
-        description: data.description,
-        imageUrl: data.imageUrl,
+        name: data.name,
+        profession: data.profession,
+        email: data.email,
       },
     });
 
     return NextResponse.json(
-      { success: true, message: "Project berhasil diubah", data: updatedProject },
+      { success: true, message: "User berhasil diubah", data: updated },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengupdate project",
+        message: "Gagal mengupdate user",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -100,44 +106,42 @@ export async function PUT(
   }
 }
 
-// =====================
-// DELETE PROJECT
-// =====================
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const projectId = Number(id);
+    const userId = Number(id);
 
-    if (isNaN(projectId)) {
+    if (isNaN(userId)) {
       return NextResponse.json(
         { success: false, message: "ID tidak valid" },
         { status: 400 }
       );
     }
 
-    const check = await prisma.project.findUnique({ where: { id: projectId } });
+    const check = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!check) {
       return NextResponse.json(
-        { success: false, message: "Project tidak ditemukan" },
+        { success: false, message: "User tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    await prisma.project.delete({ where: { id: projectId } });
+    await prisma.user.delete({ where: { id: userId } });
 
     return NextResponse.json(
-      { success: true, message: "Project berhasil dihapus" },
+      { success: true, message: "User berhasil dihapus" },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal menghapus project",
+        message: "Gagal menghapus user",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

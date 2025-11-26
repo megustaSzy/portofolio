@@ -1,47 +1,147 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET skill by id
-export const GET = async (_: NextRequest, { params }: { params: { id: string } }) => {
-  const id = Number(params.id);
-  const skill = await prisma.skill.findUnique({ where: { id }, include: { user: true } });
+// =====================
+// GET SKILL BY ID
+// =====================
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const skillId = Number(id);
 
-  if (!skill)
-    return NextResponse.json({ message: "Skill tidak ditemukan", success: false });
+    if (isNaN(skillId)) {
+      return NextResponse.json(
+        { success: false, message: "ID tidak valid" },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json({ message: "Skill ditemukan", success: true, skill });
-};
+    const skill = await prisma.skill.findUnique({
+      where: { id: skillId },
+      include: { user: true },
+    });
 
-// PUT update skill
-export const PUT = async (request: NextRequest, { params }: { params: { id: string } }) => {
-  const id = Number(params.id);
-  const data = await request.json();
+    if (!skill) {
+      return NextResponse.json(
+        { success: false, message: "Skill tidak ditemukan" },
+        { status: 404 }
+      );
+    }
 
-  const updatedSkill = await prisma.skill.update({
-    where: { id },
-    data: {
-      name: data.name,
-      level: data.level,
-      iconUrl: data.iconUrl,
-    },
-  });
+    return NextResponse.json(
+      { success: true, message: "Skill ditemukan", data: skill },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal mengambil skill",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
 
-  return NextResponse.json({
-    message: "Skill berhasil diubah",
-    success: true,
-    data: updatedSkill,
-  });
-};
+// =====================
+// PUT UPDATE SKILL
+// =====================
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const skillId = Number(id);
 
-// DELETE skill
-export const DELETE = async (_: NextRequest, { params }: { params: { id: string } }) => {
-  const id = Number(params.id);
+    if (isNaN(skillId)) {
+      return NextResponse.json(
+        { success: false, message: "ID tidak valid" },
+        { status: 400 }
+      );
+    }
 
-  const check = await prisma.skill.findUnique({ where: { id } });
-  if (!check)
-    return NextResponse.json({ message: "Skill tidak ditemukan", success: false });
+    const data = await request.json();
 
-  await prisma.skill.delete({ where: { id } });
+    const check = await prisma.skill.findUnique({ where: { id: skillId } });
 
-  return NextResponse.json({ message: "Skill berhasil dihapus", success: true });
-};
+    if (!check) {
+      return NextResponse.json(
+        { success: false, message: "Skill tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    const updatedSkill = await prisma.skill.update({
+      where: { id: skillId },
+      data: {
+        name: data.name,
+        level: data.level,
+        iconUrl: data.iconUrl,
+      },
+    });
+
+    return NextResponse.json(
+      { success: true, message: "Skill berhasil diubah", data: updatedSkill },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal mengupdate skill",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// =====================
+// DELETE SKILL
+// =====================
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const skillId = Number(id);
+
+    if (isNaN(skillId)) {
+      return NextResponse.json(
+        { success: false, message: "ID tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    const check = await prisma.skill.findUnique({ where: { id: skillId } });
+
+    if (!check) {
+      return NextResponse.json(
+        { success: false, message: "Skill tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.skill.delete({ where: { id: skillId } });
+
+    return NextResponse.json(
+      { success: true, message: "Skill berhasil dihapus" },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal menghapus skill",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
