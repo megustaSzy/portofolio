@@ -34,9 +34,12 @@ model Skill {
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
   name      String
+  level     String?   // misal: Beginner / Intermediate / Expert
+  iconUrl   String?   // URL ikon skill
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 
 model Project {
   id          Int      @id @default(autoincrement())
@@ -44,9 +47,11 @@ model Project {
   userId      Int
   title       String
   description String
+  imageUrl    String?   // <--- URL gambar proyek
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 
 model Experience {
   id          Int      @id @default(autoincrement())
@@ -67,6 +72,8 @@ model Education {
   degree      String
   startYear   Int
   endYear     Int
+  certificateUrl String?  // <--- URL sertifikat pendidikan
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
