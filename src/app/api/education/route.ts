@@ -49,4 +49,23 @@ export const POST = async(req: NextRequest) => {
             }
         )
     }
+
+    const user = await prisma.user.create({
+        data:{
+            name: data.name,
+            profession: data.profession,
+            email: data.email,
+        }
+    });
+
+    return NextResponse.json(
+        {
+            message: "user berhasil disimpan",
+            success: true,
+            data: user
+        },
+        {
+            status: 201
+        }
+    )
 }
